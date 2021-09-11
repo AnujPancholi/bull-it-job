@@ -1,0 +1,15 @@
+{
+  "name": "bull-it-worker",
+  "version": "0.0.1",
+  "description": "Worker process to execute jobs from queues",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: I was told that unit tests are not necessary\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Anuj Pancholi",
+  "license": "ISC",
+  "dependencies": {
+    "bull": "^3.29.2"
+  }
+}
