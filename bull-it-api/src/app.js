@@ -1,11 +1,26 @@
 const express = require("express");
 const { nullResponseObj, getResponseObj } = require("./utils/responseUtils.js");
 const routes = require("./routes/index.js");
+const {
+  jobQueue,
+  jobSchedulingStrageties,
+} = require("./lib/queues/jobQueue.js");
 
 module.exports = (deps) => {
-  const { appLogger, db } = deps;
+  const { getLogger, db } = deps;
 
+  const appLogger = getLogger({
+    module: "app.js",
+  })
   const app = express();
+
+  const schedulers = jobSchedulingStrageties({
+    db,
+    logger: getLogger({
+      module: "scheduling-strategies",
+    }),
+    queue: jobQueue,
+  })
 
   app.use(
     express.json({
@@ -28,7 +43,12 @@ module.exports = (deps) => {
   });
 
   Object.keys(routes).forEach((route) => {
-    app.use(`/${route}`, routes[route]);
+    app.use(`/${route}`, routes[route]({
+      logger: getLogger({
+        module: `routes/${route}`,
+      }),
+      schedulers,
+    }));
   });
 
   app.use((error, req, res, next) => {

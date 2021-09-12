@@ -1,9 +1,11 @@
-const jobsRouter = require("express").Router();
+const express = require("express")
 const { getResponseObj } = require("../utils/responseUtils.js");
 const { JOBS: JOBS_COLLECTION_NAME } = require("../config.js").COLLECTION_NAMES;
 
 const getJobsRouter = (deps) => {
   const { logger } = deps;
+
+  const jobsRouter = express.Router();
 
   const jobsQueryBuilder = () => {
     const queryObj = {};

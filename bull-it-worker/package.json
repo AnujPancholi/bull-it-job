@@ -10,6 +10,9 @@
   "author": "Anuj Pancholi",
   "license": "ISC",
   "dependencies": {
-    "bull": "^3.29.2"
+    "bull": "^3.29.2",
+    "dotenv": "^10.0.0",
+    "mongodb": "^4.1.1",
+    "pino": "^6.13.2"
   }
 }

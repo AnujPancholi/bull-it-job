@@ -5,8 +5,13 @@ require("dotenv").config({
 });
 const app = require("./app.js");
 const getLogger = require("./utils/logger.js");
+const {
+  jobQueue,
+  addEventListenersToQueue,
+} = require('./lib/queues/jobQueue.js');
 const mongoLib = require("./lib/mongo.js");
 const CONFIG = require("./config.js");
+const mongo = require("./lib/mongo.js");
 
 const serverStartLogger = getLogger({
   module: "index.js",
@@ -26,7 +31,7 @@ const processExitCleanup = () => {
 const startServer = async () => {
   try {
     serverStartLogger.info("Server start triggered");
-    serverStartLogger.info(CONFIG);
+    
     const mongoClientInstance = await mongoLib.connectClientInstance({
       url: CONFIG.DB_URI,
     });
@@ -35,11 +40,17 @@ const startServer = async () => {
 
     const dbInstance = mongoClientInstance.db(CONFIG.DB_NAME);
 
+    addEventListenersToQueue(jobQueue,{
+      logger: getLogger({
+        module: "lib/queues/jobQueue.js",
+      }),
+      db: dbInstance,
+      getValidObjectId: mongo.getValidObjectId,
+    })
+
     serverStartLogger.info("Starting API server...");
     app({
-      appLogger: getLogger({
-        module: "app.js",
-      }),
+      getLogger,
       db: dbInstance,
     }).listen(CONFIG.PORT, () => {
       serverStartLogger.info(
