@@ -8,12 +8,9 @@ const CONFIG = require("./config.js")
 const jobQueue = require('./lib/queues/oneTimeJobQueue.js');
 const processorFunctions = require('./lib/processorFunctions/index.js');
 const getLogger = require("./utils/logger.js");
-const mongoLib = require('./lib/mongo.js')
-
-
-const processStartLogger = getLogger({
-    module: "index.js",
-});
+const mongoLib = require('./lib/mongo.js');
+const cpuUsageMonitProcess = require("./lib/processCpuUsageMonitor.js");
+const logger = require("../../bull-it-api/src/utils/logger.js");
 
 
 const processExitCleanup = () => {
@@ -31,13 +28,15 @@ const startProcess = (deps) => {
 
     const {
         jobQueue,
+        startCpuProcessMonit,
+        logger,
     } = deps;
 
     return async() => {
 
         try{
     
-            processStartLogger.info("Process start triggered");
+            logger.info("Process start triggered");
     
             const mongoClientInstance = await mongoLib.connectClientInstance({
                 url: CONFIG.DB_URI,
@@ -45,10 +44,10 @@ const startProcess = (deps) => {
     
             const dbInstance = mongoClientInstance.db(CONFIG.DB_NAME); 
     
-            processStartLogger.info("DB client connected");
+            logger.info("DB client connected");
     
             Object.keys(processorFunctions).forEach(processorName => {
-                processStartLogger.info(`Adding processor: ${processorName}`);
+                logger.info(`Adding processor: ${processorName}`);
                 jobQueue.process(processorName,CONFIG.DEFAULT_JOB_CONCURRENCY,processorFunctions[processorName]({
                     db: dbInstance,
                     logger: getLogger({
@@ -57,10 +56,15 @@ const startProcess = (deps) => {
                 }));
             })
     
-            processStartLogger.info('Processor functions added to queue');
+            logger.info('Processor functions added to queue');
+
+
+            startCpuProcessMonit();
+
+            
     
         } catch(e) {
-            processStartLogger.error(`Error in starting server: ${e.message || ""}`);
+            logger.error(`Error in starting server: ${e.message || ""}`);
             processExitCleanup();
             process.exit(1);
         }
@@ -70,20 +74,30 @@ const startProcess = (deps) => {
 
 startProcess({
     jobQueue,
+    startCpuProcessMonit: cpuUsageMonitProcess({
+      logger: getLogger({
+        module: "cpu-usage-monitor",
+      }),
+      MAX_CPU_USAGE_THRESHOLD: CONFIG.MAX_CPU_USAGE_THRESHOLD,
+      CPU_USAGE_MONIT_FREQUENCY: CONFIG.CPU_USAGE_MONIT_FREQUENCY,
+    }),
+    logger: getLogger({
+      module: "index.js",
+    })
 })();
 
 
 process
   .on("unhandledRejection", (reason, p) => {
-    processStartLogger.error("Unhandled Rejection at Promise", p);
+    logger.error("Unhandled Rejection at Promise", p);
   })
   .on("uncaughtException", (err) => {
-    processStartLogger.error("Uncaught Exception thrown");
+    logger.error("Uncaught Exception thrown");
     processExitCleanup();
     process.exit(1);
   })
   .on("SIGINT", function () {
-    processStartLogger.info("SIGINT observed");
+    logger.info("SIGINT observed");
     processExitCleanup();
     process.exit(0);
   });

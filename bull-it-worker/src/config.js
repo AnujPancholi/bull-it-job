@@ -9,4 +9,6 @@ module.exports = {
       SCHEDULES: "schedules",
       MESSAGES: "messages",
     },
+    MAX_CPU_USAGE_THRESHOLD: Math.max(parseFloat(process.env.MAX_CPU_USAGE_THRESHOLD || 70),50),
+    CPU_USAGE_MONIT_FREQUENCY: Math.max(parseInt(process.env.CPU_USAGE_MONIT_FREQUENCY || 15000),15000),
   };
