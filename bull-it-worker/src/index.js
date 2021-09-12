@@ -87,17 +87,21 @@ startProcess({
 })();
 
 
+const anomalyLogger = getLogger({
+  module: "anomaly",
+})
+
 process
   .on("unhandledRejection", (reason, p) => {
-    logger.error("Unhandled Rejection at Promise", p);
+    anomalyLogger.error("Unhandled Rejection at Promise", p);
   })
   .on("uncaughtException", (err) => {
-    logger.error("Uncaught Exception thrown");
+    anomalyLogger.error("Uncaught Exception thrown");
     processExitCleanup();
     process.exit(1);
   })
   .on("SIGINT", function () {
-    logger.info("SIGINT observed");
+    anomalyLogger.info("SIGINT observed");
     processExitCleanup();
     process.exit(0);
   });
