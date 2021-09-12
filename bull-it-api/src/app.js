@@ -5,13 +5,19 @@ const {
   jobQueue,
   jobSchedulingStrageties,
 } = require("./lib/queues/jobQueue.js");
+const ExtendedError = require("./lib/errors/extendedError.js");
 
 module.exports = (deps) => {
   const { getLogger, db } = deps;
 
-  const appLogger = getLogger({
-    module: "app.js",
+  const errLogger = getLogger({
+    module: "error-handler",
   })
+
+  const requestsLogger = getLogger({
+    module: "requests",
+  })
+
   const app = express();
 
   const schedulers = jobSchedulingStrageties({
@@ -29,6 +35,15 @@ module.exports = (deps) => {
   );
 
   app.use((req, res, next) => {
+
+    requestsLogger.info({
+      msg: "Request received",
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+      data: req.body,
+    })
+
     res.locals.responseObj = nullResponseObj;
     req.db = db;
     next();
@@ -52,20 +67,36 @@ module.exports = (deps) => {
   });
 
   app.use((error, req, res, next) => {
-    appLogger.error({
+    errLogger.error({
       msg: "Error caught in default error handler",
       error: {
         message: error.message,
       },
     });
-    res.locals.responseObj = getResponseObj(500, {
-      message: "INTERNAL SERVER ERROR",
-    });
+
+    if(error instanceof ExtendedError){
+      res.locals.responseObj = error.responseObj;
+    } else {
+      res.locals.responseObj = getResponseObj(500, {
+        message: "INTERNAL SERVER ERROR",
+      });
+    }
+
     next();
   });
 
   app.use((req, res, next) => {
     const responseObj = res.locals.responseObj;
+
+    requestsLogger.info({
+      msg: "Response prepared",
+      code: responseObj.code,
+      headers: {
+        ...res.getHeaders(),
+        ...responseObj.headers,
+      },
+      data: responseObj.data,
+    })
     res.set(responseObj.headers);
     res.status(responseObj.code).send(responseObj.data);
   });

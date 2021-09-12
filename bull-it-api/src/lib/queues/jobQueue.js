@@ -3,10 +3,10 @@ const {
     JOB_QUEUE_REDIS_URI,
     COLLECTION_NAMES,
 } = require('../../config.js');
-
 const {
     SCHEDULES: SCHEDULES_COLLECTION_NAME
 } = COLLECTION_NAMES
+const ExtendedError = require('../errors/extendedError.js');
 
 const jobQueue = new Queue('one-time-jobs',JOB_QUEUE_REDIS_URI);
 
@@ -74,7 +74,7 @@ const jobSchedulingStrageties = (deps) => {
     //can store all these in separate files
     return {
         "DEFAULT#": () => {
-            throw new Error("SCHEDULING STRATEGY NOT FOUND");
+            throw new ExtendedError("SCHEDULING STRATEGY NOT FOUND",400);
         },
         "one-time-timestamped": async(jobId,data) => {
             const {
@@ -82,8 +82,10 @@ const jobSchedulingStrageties = (deps) => {
             } = data;
             const timestampDateObj = new Date(rawTimestamp);
             if(!rawTimestamp || isNaN(timestampDateObj.valueOf())){
-                throw new Error('INVALID TIMESTAMP');
+                throw new ExtendedError('Invalid timestamp', 400);
             }
+
+            data.timestamp = timestampDateObj.valueOf();
 
             const {
                 insertedId
@@ -97,7 +99,7 @@ const jobSchedulingStrageties = (deps) => {
 
             const queueJobId = `one-time-timestamped#${insertedId}`;
             
-            const delay = Math.max(timestampDateObj.valueOf() - Date.now(),0);
+            const delay = Math.max(data.timestamp - Date.now(),0);
             queue.add(jobId,data,{
                 delay: delay,
                 jobId: queueJobId,

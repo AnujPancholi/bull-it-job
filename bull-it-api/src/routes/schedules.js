@@ -2,11 +2,12 @@ const express = require("express");
 const { getResponseObj } = require("../utils/responseUtils.js");
 const { JOBS: JOBS_COLLECTION_NAME, SCHEDULES: SCHEDULES_COLLECTION_NAME } = require("../config.js").COLLECTION_NAMES;
 const Joi = require('joi');
+const ExtendedError = require('../lib/errors/extendedError.js');
 
 const schedulePayloadSchema = Joi.object({
-    jobId: Joi.string(),
-    schedulingStrategy: Joi.string(),
-    data: Joi.object().unknown(true),
+    jobId: Joi.string().required(),
+    schedulingStrategy: Joi.string().required(),
+    data: Joi.object().unknown(true).required(),
 })
 
 
@@ -27,7 +28,7 @@ const getSchedulesRouter = (deps) => {
 
         const validationResult = schedulePayloadSchema.validate(payload);
         if(validationResult.error){
-            throw new Error("Payload validation failed");
+            throw new ExtendedError(`Payload validation failed: ${validationResult.error.message}`,400);
         }
 
         const jobInfo = await req.db.collection(JOBS_COLLECTION_NAME).findOne({
@@ -35,11 +36,11 @@ const getSchedulesRouter = (deps) => {
         })
 
         if(!jobInfo){
-            throw new Error("Invalid jobId");
+            throw new ExtendedError("Invalid jobId",400);
         }
 
         if(!jobInfo.schedulingStrategies.includes(payload.schedulingStrategy)){
-            throw new Error("Scheduling Strategy not supported for job");
+            throw new ExtendedError("Scheduling Strategy not supported for job",400);
         }
 
         const schedulerFunction = schedulers[payload.schedulingStrategy] || schedulers['DEFAULT#'];
