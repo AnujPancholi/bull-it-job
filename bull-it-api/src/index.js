@@ -11,7 +11,6 @@ const {
 } = require('./lib/queues/jobQueue.js');
 const mongoLib = require("./lib/mongo.js");
 const CONFIG = require("./config.js");
-const mongo = require("./lib/mongo.js");
 
 const serverStartLogger = getLogger({
   module: "index.js",
@@ -45,7 +44,7 @@ const startServer = async () => {
         module: "lib/queues/jobQueue.js",
       }),
       db: dbInstance,
-      getValidObjectId: mongo.getValidObjectId,
+      getValidObjectId: mongoLib.getValidObjectId,
     })
 
     serverStartLogger.info("Starting API server...");
