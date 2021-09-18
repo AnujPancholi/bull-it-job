@@ -7,5 +7,6 @@ module.exports = {
   COLLECTION_NAMES: {
     JOBS: "jobs",
     SCHEDULES: "schedules",
+    MESSAGES: "messages",
   },
 };
