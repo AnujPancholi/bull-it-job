@@ -1,6 +1,6 @@
 # BullIt Job
 
-*(WIP)*
+*(WIP: I initially made this as a take-home assessment but will eventually turn it into a side project)*
 
 A simple job scheduler + API powered by [Bull](https://github.com/OptimalBits/bull).
 
@@ -17,6 +17,7 @@ Yes I could've dockerized this but for certain reasons I didn't. Therefore it mu
  - [PM2](https://pm2.keymetrics.io/) installed globally (you can just copy the command from the link).
 
  - Internet access to connect with the db cluster/redis server (unless you're running literally everything locally).
+ - `npm install` (duh)
 
 ## Starting Up and Shutting Down
 
